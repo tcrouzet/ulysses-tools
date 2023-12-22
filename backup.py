@@ -15,10 +15,16 @@ Ulysses_backup_dir = '~/Library/Group Containers/X5AZV975AG.com.soulmen.shared/U
 Ulysses_dir = '~/Library/Mobile Documents/X5AZV975AG~com~soulmen~ulysses3/Documents'
 
 backup_dir = os.path.expanduser(backup_dir)
-markdown_dir = os.path.join(backup_dir, "markdown/")
+
+current_date = datetime.datetime.now()
+formatted_date = current_date.strftime("%Y%m%d-%H%M")
+markdown_dir = os.path.join(backup_dir, f"markdown-{formatted_date}/")
 Ulysses_backup_dir = os.path.expanduser(Ulysses_backup_dir)
 Ulysses_dir = os.path.expanduser(Ulysses_dir)
+
+#Init
 tag_to_md = {}
+cache_noms_dossiers = {}
 
 def secure_backup():
 
@@ -49,7 +55,7 @@ def build_tag_mapping(root):
     return tag_to_md
 
 
-def process_element(element):
+def process_elementOld(element):
     global tag_to_md
 
     text = ''
@@ -123,24 +129,81 @@ def convert_ulysses_to_markdown(xml_content):
 
     return markdown.strip()
 
-def build_path(filepath,search,replace):
-    path = filepath.replace(Ulysses_dir+"/", '')
-    md_file= os.path.join(markdown_dir,path)
-    md_file= md_file.replace(search,replace)
+def build_md_path(filename):
+    global saved_path    
+    md_file= os.path.join(markdown_dir,saved_path,filename+".md")
     destination_dir = os.path.dirname(md_file)
     os.makedirs(destination_dir, exist_ok=True)
     return md_file
 
+
+def analyser_ulgroup(file):
+    # Vérifier si le résultat est déjà dans le cache
+    if file in cache_noms_dossiers:
+        return cache_noms_dossiers[file]
+
+    try:
+        with open(file, 'rb') as f:
+            contenu = plistlib.load(f)
+            nom_dossier = contenu.get('displayName', 'Nom Inconnu')
+            cache_noms_dossiers[file] = nom_dossier  # Sauvegarder dans le cache
+            return nom_dossier
+    except Exception as e:
+        print(f"Erreur lors de la lecture du fichier {fichier}: {e}")
+        return 'Nom Inconnu'
+
+def real_dir_names(file):
+    # Diviser le chemin et extraire les noms
+    segments = file.split('/')
+    noms_dossiers = []
+
+    for segment in segments:
+        if segment.endswith('-ulgroup'):
+            fichier_ulgroup = os.path.join('/'.join(segments[:segments.index(segment) + 1]), 'Info.ulgroup')
+            nom_dossier = analyser_ulgroup(fichier_ulgroup)
+            noms_dossiers.append(nom_dossier)
+
+    return "/".join(noms_dossiers)
+
+def get_order(fichier):
+    try:
+        with open(fichier, 'rb') as file:
+            contenu = plistlib.load(file)
+            if len(contenu)>0:
+                print(contenu)
+            # Obtenir l'ordre des enfants
+            ordre = contenu.get('childOrder', [])
+            return ordre
+    except Exception as e:
+        print(f"Erreur lors de la lecture du fichier {fichier}: {e}")
+        return []
+    
+def sort_files(filename):
+    if filename.endswith('.ulgroup'):
+        return (0, filename)
+    elif filename.endswith('.plist'):
+        return (1, filename)
+    else:
+        return (2, filename)
+    
 os.system('clear')
 
 #secure_backup()
 
 data_file_extensions = {'.png', '.jpg', '.jpeg', '.tiff'}
-total_txt=0
-total_xml=0
-total_empty=0
+total_txt = 0
+total_xml = 0
+total_empty = 0
+saved_path = ""
+content_index = 0
 
 for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
+
+    # Trier les fichiers pour que .ulgroup soient traités en premier
+    #filenames.sort(key=lambda f: (not f.endswith('.ulgroup'), f))
+
+    # Trier les fichiers pour que .ulgroup soient traités en premier, puis .plist
+    filenames.sort(key=sort_files)
 
     for filename in filenames:
 
@@ -164,37 +227,25 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
             markdown = convert_ulysses_to_markdown(xml)
             if len(markdown)>0:
 
-                md_file = build_path(filepath,"ulysses/Content.xml","md")
+                content_index +=1
+                md_file = build_md_path(f"content{content_index}")
+                print(md_file)
+                
                 with open(md_file, 'w', encoding='utf-8') as f:
                     f.write(markdown)
                 
             else:
                 #Empty sheet
                 total_empty += 1
-                #xml_file = build_path(filepath,"","")
-                #shutil.copy2(filepath, xml_file)
-                #pprint.pprint(filepath)
-                #pprint.pprint(xml_file)
-                pass
 
         elif filename.endswith('.ulgroup'):
-            #Prorietary file (this is very wrong)
-            vide_file = build_path(filepath,".ulgroup","-vide.txt")
-            with open(vide_file, 'w') as fi:
-                pass 
-            #with open(filepath) as f:
-            #    temptext = f.read()
-            #pprint.pprint(temptext)
-            #exit()
-            pass
+            #Plist file
+            saved_path = real_dir_names(filepath)
+            content_index = 0
 
         elif filename.endswith('.plist'):
-            #activityHistory not very usefull for backup
-
-            continue
-            with open(filepath, 'rb') as f:
-                plist_data = plistlib.load(f)
-            pprint.pprint(plist_data)
+            #File versioning
+            pass
 
         elif os.path.splitext(filename)[1].lower() in data_file_extensions:
             #Images, PDF and other files attached to projects
