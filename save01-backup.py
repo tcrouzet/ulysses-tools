@@ -174,34 +174,23 @@ def real_dir_names(file):
 
     return "/".join(noms_dossiers)
 
-import os
-
-def find_child_number(chemin_dossier_ulysses):
-    # Extraire le dossier parent
-    dossier_parent = os.path.dirname(chemin_dossier_ulysses)
-
-    # Construire le chemin vers le fichier Info.ulgroup
-    fichier_ulgroup = os.path.join(dossier_parent, 'Info.ulgroup')
-
-    # Analyser le fichier ulgroup pour obtenir le nom et l'ordre des enfants
-    nom_dossier, child_order = analyser_ulgroup(fichier_ulgroup)
-
-    # Identifier le nom spécifique du dossier .ulysses dans le chemin
-    nom_ulysses = os.path.basename(chemin_dossier_ulysses)
-
+def get_order(fichier):
     try:
-        # Trouver la position du dossier .ulysses dans child_order
-        child_number = str(child_order.index(nom_ulysses) + 1).zfill(3)
-    except ValueError:
-        # Si le dossier .ulysses n'est pas trouvé dans child_order
-        child_number = "000"
-
-    return child_number
-
+        with open(fichier, 'rb') as file:
+            contenu = plistlib.load(file)
+            if len(contenu)>0:
+                print(contenu)
+            # Obtenir l'ordre des enfants
+            ordre = contenu.get('childOrder', [])
+            return ordre
+    except Exception as e:
+        print(f"Erreur lors de la lecture du fichier {fichier}: {e}")
+        return []
+    
 def sort_files(filename):
     if filename.endswith('.ulgroup'):
         return (0, filename)
-    elif filename.endswith('.ulysses'):
+    elif filename.endswith('.plist'):
         return (1, filename)
     else:
         return (2, filename)
@@ -216,7 +205,6 @@ total_xml = 0
 total_empty = 0
 saved_path = ""
 content_index = 0
-child_number = ''
 
 for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
 
@@ -239,10 +227,6 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
             #XML Ulysses Markdown
             total_xml += 1
 
-            local_dir = filepath.replace("/Content.xml","")
-            #print(local_dir)
-            child_number = find_child_number(local_dir)
-
             with open(filepath) as f:
                 xml = f.read()
             
@@ -250,7 +234,7 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
             if len(markdown)>0:
 
                 content_index +=1
-                md_file = build_md_path(f"{child_number}-content{content_index}")
+                md_file = build_md_path(f"content{content_index}")
                 #print(md_file)
                 
                 with open(md_file, 'w', encoding='utf-8') as f:
