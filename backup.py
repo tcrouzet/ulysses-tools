@@ -1,10 +1,11 @@
 import os
 import shutil
 import datetime
-import pprint
 import plistlib
 import xml.etree.ElementTree as ET
 import json
+import re
+
 
 
 #Where to backup on the Mac - desktop by default
@@ -24,9 +25,6 @@ markdown_dir = os.path.join(backup_dir, f"markdown-{formatted_date}/")
 Ulysses_backup_dir = os.path.expanduser(Ulysses_backup_dir)
 Ulysses_dir = os.path.expanduser(Ulysses_dir)
 
-#Init
-tag_to_md = {}
-cache_noms_dossiers = {}
 
 def secure_backup():
 
@@ -40,54 +38,6 @@ def secure_backup():
     else:
         print("No Ulysses backup found!")
 
-#Decode Ulysses tag structure
-def build_tag_mapping(root):
-    tag_to_md = {}
-    for tag in root.findall(".//tag"):
-        definition = tag.get('definition')
-        pattern = tag.get('pattern')
-        startPattern = tag.get('startPattern')
-        endPattern = tag.get('endPattern')
-
-        if startPattern and endPattern:
-            tag_to_md[definition] = (startPattern, endPattern)
-        elif pattern:
-            tag_to_md[definition] = pattern
-
-    return tag_to_md
-
-
-def process_elementOld(element):
-    global tag_to_md
-
-    text = ''
-
-    # Traitement du texte directement dans l'élément
-    if element.text:
-        text += element.text
-
-    # Traitement récursif des sous-éléments
-    for child in element:
-        if child.tag in ['tag', 'element']:
-            kind = child.get('kind')
-            md_pattern = tag_to_md.get(kind, ('', ''))
-
-            # Appliquer le pattern de début
-            text += md_pattern[0] if isinstance(md_pattern, tuple) else md_pattern
-
-            # Traitement récursif pour les sous-éléments
-            text += process_element(child)
-
-            # Appliquer le pattern de fin
-            text += md_pattern[1] if isinstance(md_pattern, tuple) else ''
-
-        # Ajouter le texte après le sous-élément (tail)
-        if child.tail:
-            text += child.tail
-
-    return text.strip()
-
-
 def process_element(element):
     text = ''
 
@@ -97,10 +47,9 @@ def process_element(element):
 
     # Traitement récursif des sous-éléments
     for child in element:
-        if child.tag == 'tag':
-            # Ajouter le texte du tag
-            if child.text:
-                text += child.text
+
+        if child.tag == 'tags' or child.tag == 'tag':
+            text += process_element(child)+" "
 
         # Pour les balises <element>
         elif child.tag == 'element':
@@ -118,17 +67,14 @@ def process_element(element):
     return text.strip()
 
 def convert_ulysses_to_markdown(xml_content):
-    global tag_to_md
 
     root = ET.fromstring(xml_content)
-
-    if len(tag_to_md) == 0:
-        tag_to_md = build_tag_mapping(root)
 
     markdown = ""
     for p in root.iter('p'):
         markdown += process_element(p) + '\n\n'
 
+    markdown = re.sub(r'\n{3,}', '\n\n', markdown)
     return markdown.strip()
 
 def build_path(filename,ext=".md"):
@@ -222,10 +168,33 @@ def sort_files(filename):
     else:
         return (3, filename)
     
+def markdown_to_filename(markdown_text):
+
+    # Supprimer les lignes de tirets
+    markdown_text = re.sub(r'^-+\n?', '', markdown_text, flags=re.MULTILINE)
+
+    # Extraire le premier paragraphe non vide
+    paragraphs = markdown_text.strip().split('\n\n')
+    first_paragraph = next((p for p in paragraphs if p.strip()), "")
+
+    # Supprimer les balises Markdown
+    text_only = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', first_paragraph)  # Supprimer les liens
+    text_only = re.sub(r'[_*#>`]', '', text_only)  # Supprimer les autres balises Markdown
+
+    # Prendre les 128 premiers caractères
+    filename = text_only[:128]
+
+    # Nettoyer pour obtenir un nom de fichier valide
+    filename = re.sub(r'[\\/*?:"<>|]', '', filename)  # Supprimer les caractères non valides
+    filename = filename.strip().replace(' ', '_')  # Remplacer les espaces par des underscores
+
+    return filename
+    
 os.system('clear')
 
 #secure_backup()
 
+cache_noms_dossiers = {}
 data_file_extensions = {'.png', '.jpg', '.jpeg', '.tiff', '.pdf'}
 total_txt = 0
 total_xml = 0
@@ -247,11 +216,10 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
         #print(filename)
 
         if filename.startswith('.'):
-            #print(filename)
             continue
 
         elif filename.endswith('.txt'):
-            #Pure mardown file (but not allway there, therefore not usable)
+            #Pure mardown file (but not often there, therefore not usable)
             total_txt += 1
 
         elif filename.endswith('.xml'):
@@ -264,7 +232,8 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
             markdown = convert_ulysses_to_markdown(xml)
             if len(markdown)>0:
 
-                md_file = build_path(f"{order}-content")
+                md_filename = markdown_to_filename(markdown)
+                md_file = build_path(f"{order}-{md_filename}")
                 
                 with open(md_file, 'w', encoding='utf-8') as f:
                     f.write(markdown)
@@ -293,10 +262,11 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
             order = find_oder(id)
             plist_flag = True
             plist_data = plist_loader(filepath)
-            plist_str = json.dumps(plist_data)
-            plist_file = build_path(f"plist/{order}",".txt")
-            with open(plist_file, 'w', encoding='utf-8') as f:
-                f.write(plist_str)
+            if plist_data:
+                plist_str = json.dumps(plist_data)
+                plist_file = build_path(f"plist/{order}",".txt")
+                with open(plist_file, 'w', encoding='utf-8') as f:
+                    f.write(plist_str)
 
         elif os.path.splitext(filename)[1].lower() in data_file_extensions:
             #Images, PDF and other files attached to projects
