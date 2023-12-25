@@ -5,36 +5,11 @@ import plistlib
 import xml.etree.ElementTree as ET
 import json
 import re
-
-#Where to backup on the Mac - desktop by default
-backup_dir = '~/Desktop/Ubackup/'
-
-#Ulysses backup files
-Ulysses_backup_dir = '~/Library/Group Containers/X5AZV975AG.com.soulmen.shared/Ulysses/Backups/'
-
-#Ulysses files non icloud
-Ulysses_dir = '~/Library/Mobile Documents/X5AZV975AG~com~soulmen~ulysses3/Documents'
-
-backup_dir = os.path.expanduser(backup_dir)
+from config import backup_dir, Ulysses_backup_dir, Ulysses_dir
 
 current_date = datetime.datetime.now()
 formatted_date = current_date.strftime("%Y%m%d-%H%M")
 markdown_dir = os.path.join(backup_dir, f"markdown-{formatted_date}/")
-Ulysses_backup_dir = os.path.expanduser(Ulysses_backup_dir)
-Ulysses_dir = os.path.expanduser(Ulysses_dir)
-
-
-def secure_backup():
-
-    current_date = datetime.date.today()
-    formatted_date = current_date.strftime("%Y%m%d")
-    last_backup = os.path.join(Ulysses_backup_dir, "Latest Backup.ulbackup")
-    
-    if os.path.exists(last_backup):
-        last_backup_target = os.path.join(backup_dir, f"ulysses-{formatted_date}.ulbackup")
-        shutil.copytree(last_backup, last_backup_target, dirs_exist_ok=True)
-    else:
-        print("No Ulysses backup found!")
 
 def process_element(element):
     text = ''
@@ -189,8 +164,6 @@ def markdown_to_filename(markdown_text):
     return filename
     
 os.system('clear')
-
-#secure_backup()
 
 cache_noms_dossiers = {}
 data_file_extensions = {'.png', '.jpg', '.jpeg', '.tiff', '.pdf'}
