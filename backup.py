@@ -104,7 +104,6 @@ def real_dir_names(file):
     return "/".join(noms_dossiers)
 
 def plist_loader(path):
-    global total_invalid
     try:
         with open(path, 'rb') as f:
             contenu = plistlib.load(f)
@@ -112,7 +111,6 @@ def plist_loader(path):
 
     except Exception as e:
         print(f"Error reading file {path}: {e}")
-        total_invalid += 1
         return False
 
 def metadata_id(path):
@@ -173,6 +171,7 @@ total_txt = 0
 total_xml = 0
 total_empty = 0
 total_invalid = 0
+total_invalid_plist = 0
 saved_path = ""
 plist_flag = False
 ulgroup_data = {}
@@ -218,7 +217,6 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
 
         elif filename.endswith('.ulgroup'):
             #Plist file describing folders and sub-folders
-            #exit("ulgroup")
             ulgroup_data = plist_loader(filepath)
             if ulgroup_data:
                 saved_path = real_dir_names(filepath)
@@ -230,13 +228,14 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
                 with open(ulgroup_file, 'w', encoding='utf-8') as f:
                     f.write(ulgroup_str)
             else:
+                total_invalid += 1
                 bug_file = build_path("Bug",".txt")
                 print(bug_file)
                 with open(bug_file, 'w', encoding='utf-8') as f:
-                    f.write("")
+                    f.write(str(total_invalid))
 
 
-        elif filename.endswith('.plist'):
+        elif filename.endswith('.plist') and filename != 'Root.plist':
             #Metada of text/media contener
             #print(filepath)
             id = metadata_id(filepath)
@@ -248,6 +247,12 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
                 plist_file = build_path(f"plist/{order}",".txt")
                 with open(plist_file, 'w', encoding='utf-8') as f:
                     f.write(plist_str)
+            else:
+                total_invalid_plist += 1
+                bug_file = build_path("Bug",".txt")
+                print(f"{total_invalid_plist} {bug_file}")
+                with open(bug_file, 'a', encoding='utf-8') as f:
+                    f.write(str(total_invalid_plist))
 
         elif os.path.splitext(filename)[1].lower() in data_file_extensions:
             #Images, PDF and other files attached to projects
@@ -263,3 +268,4 @@ print("txt:",total_txt)
 print("xml:",total_xml)
 print("empty xml:",total_empty)
 print("invalid ulgroup:",total_invalid)
+print("invalid plist:",total_invalid_plist)
