@@ -1,0 +1,55 @@
+{
+    "resolutionData": {
+        "sheetClusters": {
+            "46cbce81b15a4aab8396c1c2432ff414.ulysses": {
+                "version": {
+                    "83bc0042625a65717284cdb3aab32989b0586728d69def335e39d0a9508d6a15": 5
+                },
+                "lastModification": 724834575.206595,
+                "firstUnassignment": 0.0,
+                "name": "Def",
+                "Date": "26/11/2023 20:20"
+            },
+            "45b82c3042d84d0bb935bd5a44411603.ulysses": {
+                "version": {
+                    "83bc0042625a65717284cdb3aab32989b0586728d69def335e39d0a9508d6a15": 7
+                },
+                "lastModification": 724834575.22893,
+                "firstUnassignment": 0.0,
+                "name": "Prologue",
+                "Date": "21/12/2023 07:57"
+            },
+            "46573f2d7a904dd280bdc25f45b3a176.ulysses": {
+                "version": {
+                    "83bc0042625a65717284cdb3aab32989b0586728d69def335e39d0a9508d6a15": 3
+                },
+                "lastModification": 724834575.18078,
+                "firstUnassignment": 0.0,
+                "name": "Titre",
+                "date": "14/11/2023 15:52"
+            }
+        },
+        "displayName": 722410991.636037
+    },
+    "storeFormatVersion": 1,
+    "versioning": {
+        "sheetClusters": {
+            "83bc0042625a65717284cdb3aab32989b0586728d69def335e39d0a9508d6a15": 7
+        },
+        "displayName": {
+            "83bc0042625a65717284cdb3aab32989b0586728d69def335e39d0a9508d6a15": 2
+        }
+    },
+    "sheetClusters": [
+        [
+            "46573f2d7a904dd280bdc25f45b3a176.ulysses"
+        ],
+        [
+            "46cbce81b15a4aab8396c1c2432ff414.ulysses"
+        ],
+        [
+            "45b82c3042d84d0bb935bd5a44411603.ulysses"
+        ]
+    ],
+    "displayName": "Prologue"
+}

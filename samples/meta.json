@@ -1,0 +1,86 @@
+{
+    "version": 1,
+    "lastEditingDate": 722530322.937635,
+    "activityHistory": [
+        {
+            "version": 2,
+            "date": "2023-08-18",
+            "startValues": {
+                "version": 1,
+                "values": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0.0
+                ]
+            }
+        },
+        {
+            "version": 2,
+            "date": "2023-08-27",
+            "startValues": {
+                "version": 1,
+                "values": [
+                    24,
+                    22,
+                    4,
+                    2,
+                    2,
+                    2,
+                    0.1
+                ]
+            }
+        },
+        {
+            "version": 2,
+            "date": "2023-09-30",
+            "startValues": {
+                "version": 1,
+                "values": [
+                    39,
+                    36,
+                    6,
+                    3,
+                    3,
+                    3,
+                    0.1
+                ]
+            }
+        },
+        {
+            "version": 2,
+            "date": "2023-10-03",
+            "startValues": {
+                "version": 1,
+                "values": [
+                    34,
+                    31,
+                    5,
+                    2,
+                    2,
+                    2,
+                    0.1
+                ]
+            }
+        },
+        {
+            "version": 2,
+            "date": "2023-11-24",
+            "startValues": {
+                "version": 1,
+                "values": [
+                    34,
+                    31,
+                    5,
+                    2,
+                    2,
+                    2,
+                    0.1
+                ]
+            }
+        }
+    ]
+}

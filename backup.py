@@ -107,6 +107,9 @@ def plist_loader(path):
     try:
         with open(path, 'rb') as f:
             contenu = plistlib.load(f)
+            #if "46573f2d7a904dd280bdc25f45b3a176.ulysses" in path:
+            #    print(path)
+            #    print(contenu)
             return contenu
 
     except Exception as e:
@@ -115,21 +118,37 @@ def plist_loader(path):
 
 def metadata_id(path):
     path = path.replace("/Metadata.plist", "")
-    return os.path.basename(path).split('.')[0]
+    return os.path.basename(path)
 
-def find_oder(id):
+def find_order(id):
     global ulgroup_data
-    #print(ulgroup_data)
+    order = "0"
+
     if "sheetClusters" in ulgroup_data:
         total_length = len(ulgroup_data["sheetClusters"])
         max_digits = len(str(total_length))
 
-        id += ".ulysses"
-
         for i, cluster in enumerate(ulgroup_data["sheetClusters"]):
             if id in cluster:
-                return str(i + 1).zfill(max_digits)
-    return "0"
+                order = str(i + 1).zfill(max_digits)
+
+    return order
+
+def date_2_timestamp(date_str):
+    try:     
+        date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        date_obj = datetime.datetime.now()
+    return int(date_obj.timestamp())
+
+def find_timestamps(plist_data):
+    if "activityHistory" in plist_data and plist_data["activityHistory"]:
+        activity_history = plist_data["activityHistory"]
+        first_date = activity_history[0]["date"]
+        last_date = activity_history[-1]["date"]
+        return (date_2_timestamp(first_date), date_2_timestamp(last_date))
+    else:
+        return (int(datetime.datetime.now().timestamp()), int(datetime.datetime.now().timestamp()))
 
 def sort_files(filename):
     if filename.endswith('.ulgroup'):
@@ -155,7 +174,7 @@ def markdown_to_filename(markdown_text):
     text_only = re.sub(r'[_*#>`]', '', text_only)  # Supprimer les autres balises Markdown
 
     # Prendre les 128 premiers caractères
-    filename = text_only[:128]
+    filename = text_only[:64]
 
     # Nettoyer pour obtenir un nom de fichier valide
     filename = re.sub(r'[\\/*?:"<>|]', '', filename)  # Supprimer les caractères non valides
@@ -175,6 +194,7 @@ total_invalid_plist = 0
 saved_path = ""
 plist_flag = False
 ulgroup_data = {}
+timestamps = find_timestamps("")
 
 for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
 
@@ -185,8 +205,6 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
 
         # Construire le chemin complet du fichier
         filepath = os.path.join(dirpath, filename)
-
-        #print(filename)
 
         if filename.startswith('.'):
             continue
@@ -207,9 +225,12 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
 
                 md_filename = markdown_to_filename(markdown)
                 md_file = build_path(f"{order}-{md_filename}")
+                #md_file = build_path(f"{order}-{id}-{md_filename}")
                 
                 with open(md_file, 'w', encoding='utf-8') as f:
                     f.write(markdown)
+
+                os.utime(md_file, timestamps)
                 
             else:
                 #Empty sheet
@@ -224,7 +245,7 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
                 plist_flag = False
                 #Plist backup
                 ulgroup_str = json.dumps(ulgroup_data)
-                ulgroup_file = build_path("Info",".txt")
+                ulgroup_file = build_path("Info",".json")
                 with open(ulgroup_file, 'w', encoding='utf-8') as f:
                     f.write(ulgroup_str)
             else:
@@ -236,15 +257,16 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
 
 
         elif filename.endswith('.plist') and filename != 'Root.plist':
-            #Metada of text/media contener
+            #Metada.plist of text/media contener
             #print(filepath)
             id = metadata_id(filepath)
-            order = find_oder(id)
+            order = find_order(id)
             plist_flag = True
             plist_data = plist_loader(filepath)
             if plist_data:
                 plist_str = json.dumps(plist_data)
-                plist_file = build_path(f"plist/{order}",".txt")
+                plist_file = build_path(f"plist/{order}",".json")
+                timestamps = find_timestamps(plist_data)
                 with open(plist_file, 'w', encoding='utf-8') as f:
                     f.write(plist_str)
             else:
