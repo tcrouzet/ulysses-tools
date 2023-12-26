@@ -85,8 +85,6 @@ def update_saved_path(id,flag):
         saved_path = os.path.join(saved_path, id)
 
 def analyser_ulgroup(file):
-    global cache_noms_dossiers
-
     # Vérifier si le résultat est déjà dans le cache
     if file in cache_noms_dossiers:
         return cache_noms_dossiers[file]
@@ -177,15 +175,7 @@ def sort_files(filename):
         return (2, filename)
     else:
         return (3, filename)
-
-def sort_dir(filename):
-    if filename.endswith('.ulysses'):
-        return (0, filename)
-    elif filename.endswith('-ulgroup'):
-        return (1, filename)
-    else:
-        return (2, filename)
-
+    
 def markdown_to_filename(markdown_text):
 
     # Supprimer les lignes de tirets
@@ -205,127 +195,9 @@ def markdown_to_filename(markdown_text):
     # Nettoyer pour obtenir un nom de fichier valide
     filename = re.sub(r'[\\/*?:"<>|]', '', filename)  # Supprimer les caractères non valides
     filename = filename.strip().replace(' ', '_')  # Remplacer les espaces par des underscores
-    filename = filename.replace("_-_","_")
 
-    return filename.lower()
-
-
-def process_file(filepath):
-    global total_txt, total_xml, total_empty, total_invalid, total_invalid_plist, saved_path, order, plist_flag, timestamps, ulgroup_data
-
-    filename = os.path.basename(filepath)
-
-    if filename.startswith('.'):
-        pass
-
-    elif filename.endswith('.txt'):
-        #Pure mardown file (but not often there, therefore not usable)
-        total_txt += 1
-
-    elif filename.endswith('.xml'):
-        #XML Ulysses Markdown
-        total_xml += 1
-
-        with open(filepath) as f:
-            xml = f.read()
-        
-        (markdown,attachement) = convert_ulysses_to_markdown(xml)
-        if len(markdown)>0:
-
-            md_filename = markdown_to_filename(markdown)
-            md_file = build_path(f"{order}-{md_filename}")
-            #md_file = build_path(f"{order}-{id}-{md_filename}")
-            while os.path.exists(md_file):
-                md_file = md_file.replace(".md","0.md")
-            
-            with open(md_file, 'w', encoding='utf-8') as f:
-                f.write(markdown)
-                os.utime(md_file, timestamps)
-
-            #Ulyssys tags, notes, goals…
-            if len(attachement)>0:
-                attachement_file = md_file.replace(".md",".xml") 
-                with open(attachement_file, 'w', encoding='utf-8') as f:
-                    f.write(attachement)
-                    os.utime(attachement_file, timestamps)
-            
-        else:
-            #Empty sheet
-            total_empty += 1
-
-    elif filename.endswith('.ulgroup'):
-        #Plist file describing folders and sub-folders
-        ulgroup_data = plist_loader(filepath)
-        if ulgroup_data:
-            saved_path = real_dir_names(filepath)
-            order = "0"
-            plist_flag = False
-            #Plist backup
-            ulgroup_str = json.dumps(ulgroup_data)
-            ulgroup_file = build_path("Info",".json")
-            with open(ulgroup_file, 'w', encoding='utf-8') as f:
-                f.write(ulgroup_str)
-        else:
-            total_invalid += 1
-            bug_file = build_path("Bug",".txt")
-            print(bug_file)
-            with open(bug_file, 'w', encoding='utf-8') as f:
-                f.write(str(total_invalid))
-
-
-    elif filename.endswith('.plist') and filename != 'Root.plist':
-        #Metada.plist of text/media contener
-        #print(filepath)
-        id = metadata_id(filepath)
-        order = find_order(id)
-        plist_flag = True
-        plist_data = plist_loader(filepath)
-        if plist_data:
-            plist_str = json.dumps(plist_data)
-            plist_file = build_path(f"plist/{order}",".json")
-            timestamps = find_timestamps(plist_data)
-            with open(plist_file, 'w', encoding='utf-8') as f:
-                f.write(plist_str)
-        else:
-            total_invalid_plist += 1
-            bug_file = build_path("Bug",".txt")
-            print(f"{total_invalid_plist} {bug_file}")
-            with open(bug_file, 'a', encoding='utf-8') as f:
-                f.write(str(total_invalid_plist))
-
-    elif os.path.splitext(filename)[1].lower() in data_file_extensions:
-        #Images, PDF and other files attached to projects
-        media_file = build_path(f"media-{order}/",filename)
-        shutil.copy2(filepath, media_file)
-
-    else:
-        #Trash
-        pass
-
-def custom_walk(directory):
-    all_files = []
-    subdirs = []
-
-    # Collecter tous les fichiers et sous-dossiers
-    for entry in os.scandir(directory):
-        if entry.is_file():
-            all_files.append(entry.path)
-        elif entry.is_dir():
-            subdirs.append(entry.path)
-
-    # Trier et traiter tous les fichiers
-    all_files.sort(key=sort_files)
-    for filepath in all_files:
-        #/Users/thierrycrouzet/Library/Mobile Documents/X5AZV975AG~com~soulmen~ulysses3/Documents/Library/Groups-ulgroup/f9259aeb5c5c4d5eb1a322024cd9178d-ulgroup/9889bba425ef4f15ad4461dad7d98b0f-ulgroup/ca299e244337404a880c48f85ade8c1c.ulysses
-        #if '9889bba425ef4f15ad4461dad7d98b0f-ulgroup' in filepath:
-        #    print(filepath)
-        process_file(filepath)
-
-    # Parcourir récursivement les sous-dossiers
-    subdirs.sort(key=sort_dir)
-    for subdir in subdirs:
-        custom_walk(subdir)
-
+    return filename
+    
 os.system('clear')
 
 cache_noms_dossiers = {}
@@ -340,7 +212,103 @@ plist_flag = False
 ulgroup_data = {}
 timestamps = find_timestamps("")
 
-custom_walk(Ulysses_dir)
+for dirpath, dirnames, filenames in os.walk(Ulysses_dir,topdown=True):
+
+    # Trier les fichiers pour que .ulgroup soient traités en premier, puis .plist
+    filenames.sort(key=sort_files)
+
+    for filename in filenames:
+
+        # Construire le chemin complet du fichier
+        filepath = os.path.join(dirpath, filename)
+
+        if filename.startswith('.'):
+            continue
+
+        elif filename.endswith('.txt'):
+            #Pure mardown file (but not often there, therefore not usable)
+            total_txt += 1
+
+        elif filename.endswith('.xml'):
+            #XML Ulysses Markdown
+            total_xml += 1
+
+            with open(filepath) as f:
+                xml = f.read()
+            
+            (markdown,attachement) = convert_ulysses_to_markdown(xml)
+            if len(markdown)>0:
+
+                md_filename = markdown_to_filename(markdown)
+                md_file = build_path(f"{order}-{md_filename}")
+                #md_file = build_path(f"{order}-{id}-{md_filename}")
+                while os.path.exists(md_file):
+                    md_file = md_file.replace(".md","0.md")
+                
+                with open(md_file, 'w', encoding='utf-8') as f:
+                    f.write(markdown)
+
+                os.utime(md_file, timestamps)
+
+                #Ulyssys tags, notes, goals…
+                if len(attachement)>0:
+                    attachement_file = md_file.replace(".md",".xml") 
+                    with open(attachement_file, 'w', encoding='utf-8') as f:
+                        f.write(attachement)
+                
+            else:
+                #Empty sheet
+                total_empty += 1
+
+        elif filename.endswith('.ulgroup'):
+            #Plist file describing folders and sub-folders
+            ulgroup_data = plist_loader(filepath)
+            if ulgroup_data:
+                saved_path = real_dir_names(filepath)
+                order = "0"
+                plist_flag = False
+                #Plist backup
+                ulgroup_str = json.dumps(ulgroup_data)
+                ulgroup_file = build_path("Info",".json")
+                with open(ulgroup_file, 'w', encoding='utf-8') as f:
+                    f.write(ulgroup_str)
+            else:
+                total_invalid += 1
+                bug_file = build_path("Bug",".txt")
+                print(bug_file)
+                with open(bug_file, 'w', encoding='utf-8') as f:
+                    f.write(str(total_invalid))
+
+
+        elif filename.endswith('.plist') and filename != 'Root.plist':
+            #Metada.plist of text/media contener
+            #print(filepath)
+            id = metadata_id(filepath)
+            order = find_order(id)
+            plist_flag = True
+            plist_data = plist_loader(filepath)
+            if plist_data:
+                plist_str = json.dumps(plist_data)
+                plist_file = build_path(f"plist/{order}",".json")
+                timestamps = find_timestamps(plist_data)
+                with open(plist_file, 'w', encoding='utf-8') as f:
+                    f.write(plist_str)
+            else:
+                total_invalid_plist += 1
+                bug_file = build_path("Bug",".txt")
+                print(f"{total_invalid_plist} {bug_file}")
+                with open(bug_file, 'a', encoding='utf-8') as f:
+                    f.write(str(total_invalid_plist))
+
+        elif os.path.splitext(filename)[1].lower() in data_file_extensions:
+            #Images, PDF and other files attached to projects
+            media_file = build_path(f"media-{order}/",filename)
+            shutil.copy2(filepath, media_file)
+   
+        else:
+            #Trash
+            #print("Trash",filename)
+            continue
 
 print("txt:",total_txt)
 print("xml:",total_xml)
