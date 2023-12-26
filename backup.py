@@ -5,6 +5,7 @@ import plistlib
 import xml.etree.ElementTree as ET
 import json
 import re
+import copy
 from config import backup_dir, Ulysses_backup_dir, Ulysses_dir
 
 current_date = datetime.datetime.now()
@@ -43,12 +44,28 @@ def convert_ulysses_to_markdown(xml_content):
 
     root = ET.fromstring(xml_content)
 
+    attachment_html = ""
+    for attachment in root.iter('attachment'):
+        attachment_html += "<attachment"
+        for key, value in attachment.attrib.items():
+            attachment_html += f' {key}="{value}"'
+        attachment_html += '>'
+
+        for child in attachment:
+            attachment_html += ET.tostring(child, encoding='unicode')
+        
+        attachment_html += '</attachment>\n'
+
+    # Supprimer tous les éléments <attachment>
+    xml_min = re.sub(r'<attachment[^>]*>.*?</attachment>', '', xml_content, flags=re.DOTALL)
+    root = ET.fromstring(xml_min)
+    
     markdown = ""
     for p in root.iter('p'):
         markdown += process_element(p) + '\n\n'
-
     markdown = re.sub(r'\n{3,}', '\n\n', markdown)
-    return markdown.strip()
+
+    return (markdown.strip(), attachment_html.strip())
 
 def build_path(filename,ext=".md"):
     global saved_path    
@@ -220,17 +237,25 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
             with open(filepath) as f:
                 xml = f.read()
             
-            markdown = convert_ulysses_to_markdown(xml)
+            (markdown,attachement) = convert_ulysses_to_markdown(xml)
             if len(markdown)>0:
 
                 md_filename = markdown_to_filename(markdown)
                 md_file = build_path(f"{order}-{md_filename}")
                 #md_file = build_path(f"{order}-{id}-{md_filename}")
+                while os.path.exists(md_file):
+                    md_file = md_file.replace(".md","0.md")
                 
                 with open(md_file, 'w', encoding='utf-8') as f:
                     f.write(markdown)
 
                 os.utime(md_file, timestamps)
+
+                #Ulyssys tags, notes, goals…
+                if len(attachement)>0:
+                    attachement_file = md_file.replace(".md",".xml") 
+                    with open(attachement_file, 'w', encoding='utf-8') as f:
+                        f.write(attachement)
                 
             else:
                 #Empty sheet
