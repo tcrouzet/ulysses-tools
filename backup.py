@@ -104,6 +104,7 @@ def real_dir_names(file):
     return "/".join(noms_dossiers)
 
 def plist_loader(path):
+    global total_invalid
     try:
         with open(path, 'rb') as f:
             contenu = plistlib.load(f)
@@ -111,6 +112,7 @@ def plist_loader(path):
 
     except Exception as e:
         print(f"Error reading file {path}: {e}")
+        total_invalid += 1
         return False
 
 def metadata_id(path):
@@ -170,6 +172,7 @@ data_file_extensions = {'.png', '.jpg', '.jpeg', '.tiff', '.pdf'}
 total_txt = 0
 total_xml = 0
 total_empty = 0
+total_invalid = 0
 saved_path = ""
 plist_flag = False
 ulgroup_data = {}
@@ -216,15 +219,22 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
         elif filename.endswith('.ulgroup'):
             #Plist file describing folders and sub-folders
             #exit("ulgroup")
-            saved_path = real_dir_names(filepath)
-            order = "0"
-            plist_flag = False
             ulgroup_data = plist_loader(filepath)
-            #Plist backup
-            ulgroup_str = json.dumps(ulgroup_data)
-            ulgroup_file = build_path("Info",".txt")
-            with open(ulgroup_file, 'w', encoding='utf-8') as f:
-                f.write(ulgroup_str)
+            if ulgroup_data:
+                saved_path = real_dir_names(filepath)
+                order = "0"
+                plist_flag = False
+                #Plist backup
+                ulgroup_str = json.dumps(ulgroup_data)
+                ulgroup_file = build_path("Info",".txt")
+                with open(ulgroup_file, 'w', encoding='utf-8') as f:
+                    f.write(ulgroup_str)
+            else:
+                bug_file = build_path("Bug",".txt")
+                print(bug_file)
+                with open(bug_file, 'w', encoding='utf-8') as f:
+                    f.write("")
+
 
         elif filename.endswith('.plist'):
             #Metada of text/media contener
@@ -252,3 +262,4 @@ for dirpath, dirnames, filenames in os.walk(Ulysses_dir):
 print("txt:",total_txt)
 print("xml:",total_xml)
 print("empty xml:",total_empty)
+print("invalid ulgroup:",total_invalid)
