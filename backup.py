@@ -278,3 +278,5 @@ print("xml:",total_xml)
 print("empty xml:",total_empty)
 print("invalid ulgroup:",total_invalid)
 print("invalid plist:",total_invalid_plist)
+
+md.images_path(Ulysses_dir)

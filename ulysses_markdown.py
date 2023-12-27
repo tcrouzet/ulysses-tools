@@ -191,7 +191,10 @@ def images_path(root_dir):
             filepath = os.path.join(root, image_files[0])
             parts = filepath.split(os.sep)
             media_dir = parts[-2]
-            (_,order) = media_dir.split("-")
+            if "-" in media_dir:
+                (_,order) = media_dir.split("-")
+            else:
+                order = media_dir
             #print(order)
             parent_dir = os.path.dirname(root)
             #print(parent_dir)
@@ -228,7 +231,7 @@ def md_test():
         pprint.pprint(ulysses_to_markdown(xml,"00"))
 
 #md_test()
-images_path("/Users/thierrycrouzet/Desktop/Ubackup/markdown-20231227-1735")
+images_path("/Users/thierrycrouzet/Desktop/Ubackup/markdown-20231227-1906")
 
 
 md ="""## 
