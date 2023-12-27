@@ -1,0 +1,44 @@
+<sheet version="1" app_version="33.1" known_version="12">
+    <markup version="1" identifier="markdownxl" displayName="Markdown XL">
+        <tag definition="heading1" pattern="#"></tag>
+        <tag definition="heading2" pattern="##"></tag>
+        <tag definition="heading3" pattern="###"></tag>
+        <tag definition="heading4" pattern="####"></tag>
+        <tag definition="heading5" pattern="#####"></tag>
+        <tag definition="heading6" pattern="######"></tag>
+        <tag definition="divider" pattern="----"></tag>
+        <tag definition="filename" pattern="@:"></tag>
+        <tag definition="blockquote" pattern="&gt;"></tag>
+        <tag definition="comment" pattern="%%"></tag>
+        <tag definition="orderedList" pattern="\d."></tag>
+        <tag definition="unorderedList" pattern="*"></tag>
+        <tag definition="unorderedList" pattern="+"></tag>
+        <tag definition="unorderedList" pattern="-"></tag>
+        <tag definition="codeblock" pattern="''"></tag>
+        <tag definition="codeblock" pattern="``"></tag>
+        <tag definition="nativeblock" pattern="~~"></tag>
+        <tag definition="code" startPattern="`" endPattern="`"></tag>
+        <tag definition="delete" startPattern="||" endPattern="||"></tag>
+        <tag definition="emph" startPattern="*" endPattern="*"></tag>
+        <tag definition="emph" startPattern="_" endPattern="_"></tag>
+        <tag definition="inlineComment" startPattern="++" endPattern="++"></tag>
+        <tag definition="inlineNative" startPattern="~" endPattern="~"></tag>
+        <tag definition="mark" startPattern="::" endPattern="::"></tag>
+        <tag definition="strong" startPattern="**" endPattern="**"></tag>
+        <tag definition="strong" startPattern="__" endPattern="__"></tag>
+        <tag definition="annotation" startPattern="{" endPattern="}"></tag>
+        <tag definition="link" startPattern="[" endPattern="]"></tag>
+        <tag definition="footnote" pattern="(fn)"></tag>
+        <tag definition="image" pattern="(img)"></tag>
+        <tag definition="video" pattern="(vid)"></tag>
+    </markup>
+    <string xml:space="preserve">
+    <p><tags><tag kind="heading6">###### </tag></tags>Faites un geste</p>
+    <p>L’auteur cède ses droits au Fonds Clean Hands Save Lives initié par Didier Pittet et abrité par la Fondation Philanthropia – <element kind="link"><attribute identifier="URL">http://cleanhandssavelives.org/</attribute>CleanHandsSaveLives.org</element>. Chaque fois que vous achetez un exemplaire de ce livre, vous offrez à un médecin, une infirmière, un agent de santé ou un secouriste des pays défavorisés un flacon de solution pour friction hydroalcoolique des mains<element kind="footnote"><attribute identifier="text"><string xml:space="preserve">
+    <p>Ou l’équivalent d’un flacon en prise en charge, assistance ou développement de projets.</p>
+    </string></attribute></element> et sauvez des vies.</p>
+    <p></p>
+    <p><tags><tag kind="heading6">###### </tag></tags>Mentions légales</p>
+    <p><element kind="emph" startTag="*" endTag="*">Le Geste qui sauve</element>, version 2.0 ou ultérieure, est publié sous licence <element kind="link"><attribute identifier="URL">http://creativecommons.org/licenses/by-nc-nd/4.0/deed.fr</attribute>Creative Commons BY-NC-ND</element> version 4.0 ou ultérieures (la paternité de l’œuvre doit rester attribuée à <element kind="link"><attribute identifier="URL">http://tcrouzet.com/</attribute>Thierry Crouzet</element> – <element kind="link"><attribute identifier="URL">http://tcrouzet.com</attribute>tcrouzet.com</element>, pas d’utilisation commerciale et pas de modification sans son accord). Vous pouvez copier le texte et de le distribuer gratuitement. Si vous avez obtenu ce texte gratuitement et désirez remercier <element kind="link"><attribute identifier="URL">http://tcrouzet.com/</attribute>Thierry Crouzet</element> et l’équipe éditoriale tout en finançant <element kind="emph" startTag="*" endTag="*">CleanHandsSaveLives.org</element>, <element kind="link"><attribute identifier="URL">http://blog.tcrouzet.com/le-geste-qui-sauve/?lib=1</attribute>achetez le texte en librairie</element>. La photographie de couverture est sous copyright Jean Baptiste Huynh – <element kind="link"><attribute identifier="URL">http://jeanbaptistehuynh.com/</attribute>jeanbaptistehuynh.com</element>. Dans la version électronique, les dessins sont l’œuvre de <element kind="link"><attribute identifier="URL">http://www.pecub.ch/</attribute>Pécub</element> – <element kind="link"><attribute identifier="URL">http://www.pecub.ch</attribute>pecub.ch</element> et sont sous licence <element kind="link"><attribute identifier="URL">http://creativecommons.org/licenses/by-nc-nd/4.0/deed.fr</attribute>Creative Commons BY-NC-ND</element>.</p>
+    <p></p></string>
+    </sheet>

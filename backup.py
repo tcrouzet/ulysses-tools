@@ -4,67 +4,12 @@ import datetime
 import plistlib
 import xml.etree.ElementTree as ET
 import json
-import re
 from config import backup_dir, Ulysses_dir
+import ulysses_markdown as md
 
 current_date = datetime.datetime.now()
 formatted_date = current_date.strftime("%Y%m%d-%H%M")
 markdown_dir = os.path.join(backup_dir, f"markdown-{formatted_date}/")
-
-def process_element(element):
-    text = ''
-
-    # Traitement du texte directement dans l'élément
-    if element.text:
-        text += element.text
-
-    # Traitement récursif des sous-éléments
-    for child in element:
-
-        if child.tag == 'tags' or child.tag == 'tag':
-            text += process_element(child)+" "
-
-        # Pour les balises <element>
-        elif child.tag == 'element':
-            start_tag = child.get('startTag') or ''
-            end_tag = child.get('endTag') or ''
-            element_text = child.text or ''
-
-            # Ajouter le formatage Markdown et le texte de l'élément
-            text += start_tag + element_text + end_tag
-
-        # Ajouter le texte après le sous-élément (tail)
-        if child.tail:
-            text += child.tail
-
-    return text.strip()
-
-def convert_ulysses_to_markdown(xml_content):
-
-    root = ET.fromstring(xml_content)
-
-    attachment_html = ""
-    for attachment in root.iter('attachment'):
-        attachment_html += "<attachment"
-        for key, value in attachment.attrib.items():
-            attachment_html += f' {key}="{value}"'
-        attachment_html += '>'
-
-        for child in attachment:
-            attachment_html += ET.tostring(child, encoding='unicode')
-        
-        attachment_html += '</attachment>\n'
-
-    # Supprimer tous les éléments <attachment>
-    xml_min = re.sub(r'<attachment[^>]*>.*?</attachment>', '', xml_content, flags=re.DOTALL)
-    root = ET.fromstring(xml_min)
-    
-    markdown = ""
-    for p in root.iter('p'):
-        markdown += process_element(p) + '\n\n'
-    markdown = re.sub(r'\n{3,}', '\n\n', markdown)
-
-    return (markdown.strip(), attachment_html.strip())
 
 def build_path(filename,ext=".md"):
     global saved_path    
@@ -168,48 +113,6 @@ def find_timestamps(plist_data):
     else:
         return (int(datetime.datetime.now().timestamp()), int(datetime.datetime.now().timestamp()))
 
-def sort_files(filename):
-    if filename.endswith('.ulgroup'):
-        return (0, filename)
-    elif filename.endswith('.ulysses'):
-        return (1, filename)
-    elif filename.endswith('.plist'):
-        return (2, filename)
-    else:
-        return (3, filename)
-
-def sort_dir(filename):
-    if filename.endswith('.ulysses'):
-        return (0, filename)
-    elif filename.endswith('-ulgroup'):
-        return (1, filename)
-    else:
-        return (2, filename)
-
-def markdown_to_filename(markdown_text):
-
-    # Supprimer les lignes de tirets
-    markdown_text = re.sub(r'^-+\n?', '', markdown_text, flags=re.MULTILINE)
-
-    # Extraire le premier paragraphe non vide
-    paragraphs = markdown_text.strip().split('\n\n')
-    first_paragraph = next((p for p in paragraphs if p.strip()), "")
-
-    # Supprimer les balises Markdown
-    text_only = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', first_paragraph)  # Supprimer les liens
-    text_only = re.sub(r'[_*#>`]', '', text_only)  # Supprimer les autres balises Markdown
-
-    # Prendre les 128 premiers caractères
-    filename = text_only[:64]
-
-    # Nettoyer pour obtenir un nom de fichier valide
-    filename = re.sub(r'[\\/*?:"<>|]', '', filename)  # Supprimer les caractères non valides
-    filename = filename.strip().replace(' ', '_')  # Remplacer les espaces par des underscores
-    filename = filename.replace("_-_","_")
-
-    return filename.lower()
-
-
 def process_file(filepath):
     global total_txt, total_xml, total_empty, total_invalid, total_invalid_plist, saved_path, order, plist_flag, timestamps, ulgroup_data
 
@@ -229,25 +132,26 @@ def process_file(filepath):
         with open(filepath) as f:
             xml = f.read()
         
-        (markdown,attachement) = convert_ulysses_to_markdown(xml)
+        (markdown,attachement) = md.ulysses_to_markdown(xml)
         if len(markdown)>0:
 
-            md_filename = markdown_to_filename(markdown)
+            md_filename = md.get_filename(markdown)
             md_file = build_path(f"{order}-{md_filename}")
             #md_file = build_path(f"{order}-{id}-{md_filename}")
             while os.path.exists(md_file):
-                md_file = md_file.replace(".md","0.md")
-            
+                md_file = md_file.replace(".md","0.md")     
+
+            #Ulysses tags, notes, goals… in comment
+            if len(attachement)>0:
+                markdown = f"{markdown}\n\n<!--{attachement}-->"
+
             with open(md_file, 'w', encoding='utf-8') as f:
                 f.write(markdown)
                 os.utime(md_file, timestamps)
 
-            #Ulyssys tags, notes, goals…
-            if len(attachement)>0:
-                attachement_file = md_file.replace(".md",".xml") 
-                with open(attachement_file, 'w', encoding='utf-8') as f:
-                    f.write(attachement)
-                    os.utime(attachement_file, timestamps)
+            #Save source file
+            source_file = md_file.replace(".md","-ulysses.xml") 
+            shutil.copy2(filepath,source_file)
             
         else:
             #Empty sheet
@@ -301,6 +205,24 @@ def process_file(filepath):
     else:
         #Trash
         pass
+
+def sort_files(filename):
+    if filename.endswith('.ulgroup'):
+        return (0, filename)
+    elif filename.endswith('.ulysses'):
+        return (1, filename)
+    elif filename.endswith('.plist'):
+        return (2, filename)
+    else:
+        return (3, filename)
+
+def sort_dir(filename):
+    if filename.endswith('.ulysses'):
+        return (0, filename)
+    elif filename.endswith('-ulgroup'):
+        return (1, filename)
+    else:
+        return (2, filename)
 
 def custom_walk(directory):
     all_files = []
