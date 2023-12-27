@@ -208,6 +208,7 @@ def process_file(filepath):
         #Images, PDF and other files attached to projects
         media_file = build_path(f"media-{order}/",filename.lower())
         media_file = media_file.replace("DraggedImage.","")
+        media_file = media_file.replace("draggedimage.","")
         shutil.copy2(filepath, media_file)
 
     else:

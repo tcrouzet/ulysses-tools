@@ -172,13 +172,64 @@ def ulysses_pattern(root):
     
     return tag_info
 
+def images_path(root_dir):
+    image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff']
+
+    images_count = 0
+    md_modifiy = 0
+    md_count =0
+
+    for root, dirs, files in os.walk(root_dir):
+
+        image_files = [f for f in files if any(f.endswith(ext) for ext in image_extensions)]
+        
+        if image_files:
+
+            images_count += len(image_files)
+
+            # Move up one directory level
+            filepath = os.path.join(root, image_files[0])
+            parts = filepath.split(os.sep)
+            media_dir = parts[-2]
+            (_,order) = media_dir.split("-")
+            #print(order)
+            parent_dir = os.path.dirname(root)
+            #print(parent_dir)
+
+            md_files = [f for f in os.listdir(parent_dir) if f.endswith('.md') and f.startswith(order)]
+
+            for md_file in md_files:
+                md_count += 1
+                md_file_path = os.path.join(parent_dir, md_file)
+                with open(md_file_path, 'r', encoding='utf-8') as file:
+                    md_content = file.read()
+                    #print(md_content)
+                    #exit()
+                    md_org = md_content
+                    for image_file in image_files:
+                        name_without_extension = image_file.rsplit('.', 1)[0]
+                        #print(image_file)
+                        code = name_without_extension.split('.')[-1]
+                        #print(code)
+                        md_content = md_content.replace(code,image_file)
+                    if md_org != md_content:
+                        md_modifiy += 1
+                        with open(md_file_path, 'w', encoding='utf-8') as f:
+                            f.write(md_content)
+
+    print("Images:",images_count)
+    print("Markdown file to update:",md_count)
+    print("Markdown image updates:",md_modifiy)
+
 def md_test():
     os.system('clear')
     with open("samples/source.xml") as f:
         xml = f.read()
         pprint.pprint(ulysses_to_markdown(xml,"00"))
 
-md_test()
+#md_test()
+images_path("/Users/thierrycrouzet/Desktop/Ubackup/markdown-20231227-1735")
+
 
 md ="""## 
 
