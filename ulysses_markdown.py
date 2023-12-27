@@ -118,6 +118,9 @@ def ulysses_to_markdown(xml_content,order):
     markdown = re.sub(r' {2,}', ' ', markdown)
     markdown = re.sub(r'\n{3,}', '\n\n', markdown)
 
+    bad_jumps = re.compile(u'[\u2028\u2029\u0085]')
+    markdown = bad_jumps.sub('\n', markdown)
+
     return (markdown.strip(),attachment_html.strip())
 
 def get_filename(markdown_text):
