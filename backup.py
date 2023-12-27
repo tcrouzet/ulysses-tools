@@ -112,6 +112,12 @@ def find_timestamps(plist_data):
         return (date_2_timestamp(first_date), date_2_timestamp(last_date))
     else:
         return (int(datetime.datetime.now().timestamp()), int(datetime.datetime.now().timestamp()))
+    
+def add_directory_to_path(path, new_directory):
+    directory, filename = os.path.split(path)
+    news_dir_path = os.path.join(directory, new_directory)
+    os.makedirs(news_dir_path, exist_ok=True)
+    return os.path.join(news_dir_path, filename)
 
 def process_file(filepath):
     global total_txt, total_xml, total_empty, total_invalid, total_invalid_plist, saved_path, order, plist_flag, timestamps, ulgroup_data
@@ -132,7 +138,7 @@ def process_file(filepath):
         with open(filepath) as f:
             xml = f.read()
         
-        (markdown,attachement) = md.ulysses_to_markdown(xml)
+        (markdown,attachement) = md.ulysses_to_markdown(xml,order)
         if len(markdown)>0:
 
             md_filename = md.get_filename(markdown)
@@ -150,7 +156,8 @@ def process_file(filepath):
                 os.utime(md_file, timestamps)
 
             #Save source file
-            source_file = md_file.replace(".md","-ulysses.xml") 
+            source_file = add_directory_to_path(md_file, "sources")
+            source_file = source_file.replace(".md","-ulysses.xml")
             shutil.copy2(filepath,source_file)
             
         else:
@@ -199,7 +206,8 @@ def process_file(filepath):
 
     elif os.path.splitext(filename)[1].lower() in data_file_extensions:
         #Images, PDF and other files attached to projects
-        media_file = build_path(f"media-{order}/",filename)
+        media_file = build_path(f"media-{order}/",filename.lower())
+        media_file = media_file.replace("DraggedImage.","")
         shutil.copy2(filepath, media_file)
 
     else:
