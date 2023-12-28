@@ -98,8 +98,12 @@ def ulysses_to_markdown(xml_content,order):
             attachment_html += f' {key}="{value}"'
         attachment_html += '>'
 
-        for child in attachment:
-            attachment_html += ET.tostring(child, encoding='unicode')
+        if list(attachment):
+            for child in attachment:
+                attachment_html += ET.tostring(child, encoding='unicode')
+        else:
+            if attachment.text:
+                attachment_html += attachment.text
         
         attachment_html += '</attachment>\n'
 
@@ -233,8 +237,8 @@ def md_test():
         xml = f.read()
         pprint.pprint(ulysses_to_markdown(xml,"00"))
 
-#md_test()
-images_path("/Users/thierrycrouzet/Desktop/Ubackup/markdown-20231227-1906")
+md_test()
+#images_path("/Users/thierrycrouzet/Desktop/Ubackup/markdown-20231227-1906")
 
 
 md ="""## 
