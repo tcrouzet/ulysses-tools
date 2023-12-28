@@ -79,10 +79,21 @@ def plist_loader(path):
 def metadata_id(path):
     path = path.replace("/Metadata.plist", "")
     path = path.replace("/TextChecker.plist","")
-    return os.path.basename(path)
+    temp_id = os.path.basename(path)
+    if temp_id == "":
+        print("No id found",path)
+    return temp_id
 
-def find_order(id):
-    global ulgroup_data
+#Input XML file
+def find_order_id(filepath):
+    xml_dir = os.path.dirname(filepath)
+    id = os.path.basename(xml_dir)
+    #print(id)
+    parent_dir = os.path.dirname(xml_dir)
+    #print(parent_dir)
+    plist_file = os.path.join(parent_dir,"Info.ulgroup")
+    #print(plist_file)
+    ulgroup_data = plist_loader(plist_file)
 
     if "sheetClusters" in ulgroup_data:
         total_length = len(ulgroup_data["sheetClusters"])
@@ -90,13 +101,10 @@ def find_order(id):
 
         for i, cluster in enumerate(ulgroup_data["sheetClusters"]):
             if id in cluster:
-                return str(i + 1).zfill(max_digits)
+                return (str(i + 1).zfill(max_digits),id)
 
-    print(f"No SheetCluster {id}")
-    #if "TextChecker.plist" in  id:
-    #    print(ulgroup_data)
-    #    exit()
-    return "xxx"
+    print(f"No {id} in SheetCluster")
+    return ("xxx",id)
 
 def date_2_timestamp(date_str):
     try:     
@@ -121,7 +129,7 @@ def add_directory_to_path(path, new_directory):
     return os.path.join(news_dir_path, filename)
 
 def process_file(filepath):
-    global total_txt, total_xml, total_empty, total_invalid, total_invalid_plist, saved_path, order, last_order, plist_flag, timestamps, ulgroup_data, id
+    global total_txt, total_xml, total_empty, total_invalid, total_invalid_plist, saved_path, order, last_order, timestamps, id
 
     filename = os.path.basename(filepath)
 
@@ -139,16 +147,13 @@ def process_file(filepath):
         with open(filepath) as f:
             xml = f.read()
         
+        (order,id) = find_order_id(filepath)
         (markdown,attachement) = md.ulysses_to_markdown(xml,order)
         if len(markdown)>0:
 
-            if order == last_order or order == "":
-                order = "xxx"
             md_filename = md.get_filename(markdown)
-            #md_file = build_path(f"{order}-{md_filename}")
-            md_file = build_path(f"{order}-{id}-{md_filename}")
-            last_order = order
-            id = ""
+            md_file = build_path(f"{order}-{md_filename}")
+            #md_file = build_path(f"{order}-{id}-{md_filename}")
             while os.path.exists(md_file):
                 md_file = md_file.replace(".md","0.md")     
 
@@ -174,8 +179,7 @@ def process_file(filepath):
         ulgroup_data = plist_loader(filepath)
         if ulgroup_data:
             saved_path = real_dir_names(filepath)
-            order = ""
-            plist_flag = False
+            #order = "xxx"
             #Plist backup
             ulgroup_str = json.dumps(ulgroup_data)
             ulgroup_file = build_path("Info",".json")
@@ -190,12 +194,11 @@ def process_file(filepath):
 
 
     elif filename.endswith('.plist') and filename != 'Root.plist':
-        #Metada.plist of text/media contener
+        #Metada.plist
         #print(filepath)
-        id = metadata_id(filepath)
-        order = find_order(id)
+        #id = metadata_id(filepath)
+        #order = find_order(id)
         #if order == "xxx": print(filepath)
-        plist_flag = True
         plist_data = plist_loader(filepath)
         if plist_data:
             plist_str = json.dumps(plist_data)
@@ -228,8 +231,10 @@ def sort_files(filename):
         return (1, filename)
     elif filename.endswith('.plist'):
         return (2, filename)
-    else:
+    elif filename.endswith('.xml'):
         return (3, filename)
+    else:
+        return (4, filename)
 
 def sort_dir(filename):
     if filename.endswith('.ulysses'):
@@ -272,8 +277,7 @@ total_empty = 0
 total_invalid = 0
 total_invalid_plist = 0
 saved_path = ""
-plist_flag = False
-ulgroup_data = {}
+#ulgroup_data = {}
 timestamps = find_timestamps("")
 id = "" #Current Ulysses file id
 last_order = ""
