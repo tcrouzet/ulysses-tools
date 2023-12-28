@@ -9,6 +9,9 @@ Ulysses_backup_dir = '~/Library/Group Containers/X5AZV975AG.com.soulmen.shared/U
 #Ulysses files non icloud
 Ulysses_dir = '~/Library/Mobile Documents/X5AZV975AG~com~soulmen~ulysses3/Documents'
 
+#Witth a . hide ulysses original datas, otherwise empty 
+uHide = "."
+
 backup_dir = os.path.expanduser(backup_dir)
 Ulysses_backup_dir = os.path.expanduser(Ulysses_backup_dir)
 Ulysses_dir = os.path.expanduser(Ulysses_dir)

@@ -6,7 +6,7 @@ import os
 footnote_index = 1
 footnote_text = ""
 
-def process_element(element,pattern,order):
+def process_element(element,pattern,order,uHide):
     global footnote_index,footnote_text,element_attribute
 
     text = ''
@@ -20,7 +20,7 @@ def process_element(element,pattern,order):
     for child in element:
 
         if child.tag in ['tags', 'tag']:
-            (tag_text, _) = process_element(child,pattern,order)
+            (tag_text, _) = process_element(child, pattern, order, uHide)
             text += tag_text+" "
 
         # Pour les balises <element>
@@ -34,7 +34,7 @@ def process_element(element,pattern,order):
                     footnote_text_here = ""
                     for para in footnote_detail:
                         if para.tag == 'p':
-                            (para_text, _) = process_element(para, pattern, order)
+                            (para_text, _) = process_element(para, pattern, order, uHide)
                             footnote_text_here += para_text
                             #footnote_text_here += ''.join(para.itertext()).strip()
 
@@ -53,11 +53,11 @@ def process_element(element,pattern,order):
                         alt = alt_attribute.text
                     else:
                         alt = "Image"
-                    text += f"![{alt}](media-{order}/{image_attribute.text})"
+                    text += f"![{alt}]({uHide}media-{order}/{image_attribute.text})"
 
             elif pattern[kind]["start"] and pattern[kind]["end"]:
 
-                (element_text, element_attribute) = process_element(child,pattern,order)
+                (element_text, element_attribute) = process_element(child, pattern, order, uHide)
                 text += pattern[kind]["start"] + element_text + pattern[kind]["end"]
 
             elif pattern[kind]["pattern"]:
@@ -80,7 +80,7 @@ def process_element(element,pattern,order):
     return (text,attribute)
 
 
-def ulysses_to_markdown(xml_content,order):
+def ulysses_to_markdown(xml_content, order, uHide="."):
     global footnote_text,footnote_index
 
     footnote_index = 1
@@ -116,7 +116,7 @@ def ulysses_to_markdown(xml_content,order):
     for p in root.iter('p'):
         parent = parent_map.get(p)
         if parent == root or parent_map.get(parent) == root:
-            (text,_) = process_element(p,pattern,order)
+            (text,_) = process_element(p, pattern, order, uHide)
             markdown += text + '\n\n'
     markdown += footnote_text
     markdown = re.sub(r' {2,}', ' ', markdown)

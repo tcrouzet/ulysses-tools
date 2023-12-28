@@ -4,7 +4,7 @@ import datetime
 import plistlib
 import xml.etree.ElementTree as ET
 import json
-from config import backup_dir, Ulysses_dir
+from config import backup_dir, Ulysses_dir, uHide
 import ulysses_markdown as md
 
 current_date = datetime.datetime.now()
@@ -148,7 +148,7 @@ def process_file(filepath):
             xml = f.read()
         
         (order,id) = find_order_id(filepath)
-        (markdown,attachement) = md.ulysses_to_markdown(xml,order)
+        (markdown,attachement) = md.ulysses_to_markdown(xml, order, uHide)
         if len(markdown)>0:
 
             md_filename = md.get_filename(markdown)
@@ -166,7 +166,7 @@ def process_file(filepath):
                 os.utime(md_file, timestamps)
 
             #Save source file
-            source_file = add_directory_to_path(md_file, "sources")
+            source_file = add_directory_to_path(md_file, f"{uHide}sources")
             source_file = source_file.replace(".md","-ulysses.xml")
             shutil.copy2(filepath,source_file)
             
@@ -179,15 +179,13 @@ def process_file(filepath):
         ulgroup_data = plist_loader(filepath)
         if ulgroup_data:
             saved_path = real_dir_names(filepath)
-            #order = "xxx"
-            #Plist backup
             ulgroup_str = json.dumps(ulgroup_data)
-            ulgroup_file = build_path("Info",".json")
+            ulgroup_file = build_path(f"{uHide}Info",".json")
             with open(ulgroup_file, 'w', encoding='utf-8') as f:
                 f.write(ulgroup_str)
         else:
             total_invalid += 1
-            bug_file = build_path("Bug",".txt")
+            bug_file = build_path(f"{uHide}Bug",".txt")
             print(bug_file)
             with open(bug_file, 'w', encoding='utf-8') as f:
                 f.write(str(total_invalid))
@@ -195,27 +193,23 @@ def process_file(filepath):
 
     elif filename.endswith('.plist') and filename != 'Root.plist':
         #Metada.plist
-        #print(filepath)
-        #id = metadata_id(filepath)
-        #order = find_order(id)
-        #if order == "xxx": print(filepath)
         plist_data = plist_loader(filepath)
         if plist_data:
             plist_str = json.dumps(plist_data)
-            plist_file = build_path(f"plist/{order}",".json")
+            plist_file = build_path(f"{uHide}plist/{order}",".json")
             timestamps = find_timestamps(plist_data)
             with open(plist_file, 'w', encoding='utf-8') as f:
                 f.write(plist_str)
         else:
             total_invalid_plist += 1
-            bug_file = build_path("Bug",".txt")
+            bug_file = build_path(f"{uHide}Bug",".txt")
             print(f"{total_invalid_plist} {bug_file}")
             with open(bug_file, 'a', encoding='utf-8') as f:
                 f.write(str(total_invalid_plist))
 
     elif os.path.splitext(filename)[1].lower() in data_file_extensions:
         #Images, PDF and other files attached to projects
-        media_file = build_path(f"media-{order}/",filename.lower())
+        media_file = build_path(f"{uHide}media-{order}/",filename.lower())
         media_file = media_file.replace("DraggedImage.","")
         media_file = media_file.replace("draggedimage.","")
         shutil.copy2(filepath, media_file)
