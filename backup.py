@@ -67,9 +67,16 @@ def real_dir_names(file):
     return "/".join(noms_dossiers)
 
 def plist_loader(path):
+    global plist_cache
+
+    # Vérifier si le résultat est déjà dans le cache
+    if path in plist_cache:
+        return plist_cache[path]
+
     try:
         with open(path, 'rb') as f:
             contenu = plistlib.load(f)
+            plist_cache[path] = contenu
             return contenu
 
     except Exception as e:
@@ -144,7 +151,7 @@ def process_file(filepath):
         #XML Ulysses Markdown
         total_xml += 1
 
-        with open(filepath) as f:
+        with open(filepath, encoding='utf-8') as f:
             xml = f.read()
         
         (order,id) = find_order_id(filepath)
@@ -264,6 +271,7 @@ def custom_walk(directory):
 os.system('clear')
 
 cache_noms_dossiers = {}
+plist_cache = {}
 data_file_extensions = {'.png', '.jpg', '.jpeg', '.tiff', '.pdf'}
 total_txt = 0
 total_xml = 0

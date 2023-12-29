@@ -2,9 +2,15 @@ import xml.etree.ElementTree as ET
 import re
 import pprint
 import os
+import unicodedata
+import string
 
 footnote_index = 1
 footnote_text = ""
+
+def no_accent(msg):
+    texte_sans_accent = unicodedata.normalize('NFKD', msg).encode('ASCII', 'ignore')
+    return texte_sans_accent.decode('ASCII')
 
 def process_element(element,pattern,order,uHide):
     global footnote_index,footnote_text,element_attribute
@@ -91,25 +97,9 @@ def ulysses_to_markdown(xml_content, order, uHide="."):
     pattern = ulysses_pattern(root)
     #pprint.pprint(pattern)
 
-    attachment_html = ""
-    for attachment in root.iter('attachment'):
-        attachment_html += "<attachment"
-        for key, value in attachment.attrib.items():
-            attachment_html += f' {key}="{value}"'
-        attachment_html += '>'
-
-        if list(attachment):
-            for child in attachment:
-                attachment_html += ET.tostring(child, encoding='unicode')
-        else:
-            if attachment.text:
-                attachment_html += attachment.text
-        
-        attachment_html += '</attachment>\n'
-
     # Supprimer tous les éléments <attachment>
-    xml_min = re.sub(r'<attachment[^>]*>.*?</attachment>', '', xml_content, flags=re.DOTALL)
-    root = ET.fromstring(xml_min)
+    #xml_min = re.sub(r'<attachment[^>]*>.*?</attachment>', '', xml_content, flags=re.DOTALL)
+    #root = ET.fromstring(xml_min)
     
     markdown = ""
     parent_map = {c: p for p in root.iter() for c in p}
@@ -124,6 +114,48 @@ def ulysses_to_markdown(xml_content, order, uHide="."):
 
     bad_jumps = re.compile(u'[\u2028\u2029\u0085]')
     markdown = bad_jumps.sub('\n', markdown)
+    markdown = markdown.replace("---- \n","---\n")
+    markdown = markdown.strip()
+
+    special_tags = ["keywords","note","goal"]
+    attachment_html = ""
+    keywords = ""
+    note = ""
+    for attachment in root.iter('attachment'):
+        attachment_tmp = ""
+        for key, value in attachment.attrib.items():
+            #print(key, value)
+            if value not in special_tags:
+                attachment_tmp += f' {key}="{value}"'
+            else:
+                break
+        if attachment_tmp:
+            attachment_tmp = "<attachment"+attachment_tmp+'>'
+
+        if list(attachment):
+            for child in attachment:
+                string_tmp = ET.tostring(child, encoding='unicode')
+                if value not in special_tags:
+                    attachment_tmp += string_tmp
+                elif value=="note":
+                    note += re.sub(r'<[^>]+>', '', string_tmp).strip()
+        else:
+            if attachment.text:
+                if value == "keywords":
+                    keywords+= attachment.text
+                    attachment_tmp = ""
+                else:
+                    attachment_tmp += attachment.text
+        
+        if attachment_tmp:
+            attachment_html += attachment_tmp+'</attachment>\n'
+
+    if keywords:
+        keywords = "#" + keywords.replace(","," #")
+        markdown += f"\n\n{keywords}"
+
+    if note:
+        markdown += f"\n<!--{note}-->"
 
     return (markdown.strip(),attachment_html.strip())
 
@@ -151,7 +183,7 @@ def get_filename(markdown_text):
         if line.strip():
             line = line[:48]
             line = line.lower()
-            return line.strip()
+            return no_accent(line.strip())
 
     return "unknown"
 
@@ -171,11 +203,14 @@ def ulysses_pattern(root):
         endPattern = tag.get('endPattern', None)
         
         # Stockez les informations dans le dictionnaire
-        tag_info[definition] = {
-            "pattern": pattern,
-            "start": startPattern,
-            "end": endPattern
-        }
+        if definition not in tag_info:
+            if definition == "divider":
+                pattern = "---"
+            tag_info[definition] = {
+                "pattern": pattern,
+                "start": startPattern,
+                "end": endPattern
+            }
     
     return tag_info
 
