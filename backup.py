@@ -279,7 +279,6 @@ total_empty = 0
 total_invalid = 0
 total_invalid_plist = 0
 saved_path = ""
-#ulgroup_data = {}
 timestamps = find_timestamps("")
 id = "" #Current Ulysses file id
 last_order = ""

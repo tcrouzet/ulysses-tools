@@ -273,13 +273,3 @@ def md_test():
         pprint.pprint(ulysses_to_markdown(xml,"00"))
 
 md_test()
-#images_path("/Users/thierrycrouzet/Desktop/Ubackup/markdown-20231227-1906")
-
-
-md ="""## 
-
-(img)
-
-La lutte contre les infections liées aux soins, particulièrement l’hygiène des mains, tout comme ce livre qui la raconte, bénéficient du soutien particulier de bioMérieux, B. Braun Medical, Hong Kong Infection Control Nurses’ Association, Laboratoires Anios, SARAYA et du POPS (Private Organizations for Patient Safety), une association qui a pour but de promouvoir la sécurité des patients à l’échelle globale en étroite collaboration avec l’Organisation Mondiale de la Santé et qui regroupe notamment B. Braun Medical, Deb Group (Ltd./DebMed USA), LLC, Ecolab, Elyptol, GeneralSensing, GOJO, Hartmann Group – Bode Science Centre, Laboratoires Anios, SARAYA, Sealed Air, Schulke et Surewash."""
-
-#print(get_filename(md))
