@@ -114,7 +114,7 @@ def ulysses_to_markdown(xml_content, order, uHide="."):
 
     bad_jumps = re.compile(u'[\u2028\u2029\u0085]')
     markdown = bad_jumps.sub('\n', markdown)
-    markdown = markdown.replace("---- \n","---\n")
+    #markdown = markdown.replace("---- \n","---\n")
     markdown = markdown.strip()
 
     special_tags = ["keywords","note","goal"]
