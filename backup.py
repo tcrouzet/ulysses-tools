@@ -67,7 +67,7 @@ def real_dir_names(file):
     return "/".join(noms_dossiers)
 
 def plist_loader(path):
-    global plist_cache
+    global plist_cache,plist_file_bugs
 
     # Vérifier si le résultat est déjà dans le cache
     if path in plist_cache:
@@ -80,7 +80,9 @@ def plist_loader(path):
             return contenu
 
     except Exception as e:
-        print(f"Error reading file {path}: {e}")
+        plist_file_bugs += 1
+        plist_cache[path] = ""
+        #print(f"Error reading file {path}: {e}")
         return False
 
 def metadata_id(path):
@@ -92,8 +94,10 @@ def metadata_id(path):
     return temp_id
 
 #Input XML file
-def find_order_id(filepath):
+def find_order_id_timestamps(filepath):
     xml_dir = os.path.dirname(filepath)
+    metadata_file = os.path.join(xml_dir,"Metadata.plist")
+    timestamps = find_timestamps(metadata_file)
     id = os.path.basename(xml_dir)
     #print(id)
     parent_dir = os.path.dirname(xml_dir)
@@ -108,10 +112,10 @@ def find_order_id(filepath):
 
         for i, cluster in enumerate(ulgroup_data["sheetClusters"]):
             if id in cluster:
-                return (str(i + 1).zfill(max_digits),id)
+                return (str(i + 1).zfill(max_digits),id,timestamps)
 
     print(f"No {id} in SheetCluster")
-    return ("xxx",id)
+    return ("xxx",id,timestamps)
 
 def date_2_timestamp(date_str):
     try:     
@@ -120,8 +124,9 @@ def date_2_timestamp(date_str):
         date_obj = datetime.datetime.now()
     return int(date_obj.timestamp())
 
-def find_timestamps(plist_data):
-    if "activityHistory" in plist_data and plist_data["activityHistory"]:
+def find_timestamps(filepath):
+    plist_data = plist_loader(filepath)
+    if plist_data and "activityHistory" in plist_data and plist_data["activityHistory"]:
         activity_history = plist_data["activityHistory"]
         first_date = activity_history[0]["date"]
         last_date = activity_history[-1]["date"]
@@ -136,7 +141,7 @@ def add_directory_to_path(path, new_directory):
     return os.path.join(news_dir_path, filename)
 
 def process_file(filepath):
-    global total_txt, total_xml, total_empty, total_invalid, total_invalid_plist, saved_path, order, last_order, timestamps, id
+    global total_txt, total_xml, total_empty, saved_path, order, id
 
     filename = os.path.basename(filepath)
 
@@ -154,10 +159,9 @@ def process_file(filepath):
         with open(filepath, encoding='utf-8') as f:
             xml = f.read()
         
-        (order,id) = find_order_id(filepath)
+        (order,id,timestamps) = find_order_id_timestamps(filepath)
         (markdown,attachement) = md.ulysses_to_markdown(xml, order, uHide)
         if len(markdown)>0:
-
             md_filename = md.get_filename(markdown)
             md_file = build_path(f"{order}-{md_filename}")
             #md_file = build_path(f"{order}-{id}-{md_filename}")
@@ -190,13 +194,6 @@ def process_file(filepath):
             ulgroup_file = build_path(f"{uHide}Info",".json")
             with open(ulgroup_file, 'w', encoding='utf-8') as f:
                 f.write(ulgroup_str)
-        else:
-            total_invalid += 1
-            bug_file = build_path(f"{uHide}Bug",".txt")
-            print(bug_file)
-            with open(bug_file, 'w', encoding='utf-8') as f:
-                f.write(str(total_invalid))
-
 
     elif filename.endswith('.plist') and filename != 'Root.plist':
         #Metada.plist
@@ -204,15 +201,8 @@ def process_file(filepath):
         if plist_data:
             plist_str = json.dumps(plist_data)
             plist_file = build_path(f"{uHide}plist/{order}",".json")
-            timestamps = find_timestamps(plist_data)
             with open(plist_file, 'w', encoding='utf-8') as f:
                 f.write(plist_str)
-        else:
-            total_invalid_plist += 1
-            bug_file = build_path(f"{uHide}Bug",".txt")
-            print(f"{total_invalid_plist} {bug_file}")
-            with open(bug_file, 'a', encoding='utf-8') as f:
-                f.write(str(total_invalid_plist))
 
     elif os.path.splitext(filename)[1].lower() in data_file_extensions:
         #Images, PDF and other files attached to projects
@@ -276,19 +266,16 @@ data_file_extensions = {'.png', '.jpg', '.jpeg', '.tiff', '.pdf'}
 total_txt = 0
 total_xml = 0
 total_empty = 0
-total_invalid = 0
-total_invalid_plist = 0
+plist_file_bugs = 0
 saved_path = ""
 timestamps = find_timestamps("")
 id = "" #Current Ulysses file id
-last_order = ""
 
 custom_walk(Ulysses_dir)
 
 print("txt:",total_txt)
 print("xml:",total_xml)
 print("empty xml:",total_empty)
-print("invalid ulgroup:",total_invalid)
-print("invalid plist:",total_invalid_plist)
+print("no plist file:",plist_file_bugs)
 
 md.images_path(markdown_dir)
