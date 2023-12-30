@@ -3,7 +3,7 @@ import re
 import pprint
 import os
 import unicodedata
-import string
+from config import no_accent_in_file
 
 footnote_index = 1
 footnote_text = ""
@@ -160,6 +160,7 @@ def ulysses_to_markdown(xml_content, order, uHide="."):
     return (markdown.strip(),attachment_html.strip())
 
 def get_filename(markdown_text):
+    global no_accent_in_file
 
     # Supprimer les lignes de tirets
     markdown_text = markdown_text[:256]
@@ -183,7 +184,9 @@ def get_filename(markdown_text):
         if line.strip():
             line = line[:48]
             line = line.lower()
-            return no_accent(line.strip())
+            if no_accent_in_file:
+                line = no_accent(line)
+            return line.strip()
 
     return "unknown"
 

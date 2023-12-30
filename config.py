@@ -12,6 +12,9 @@ Ulysses_dir = '~/Library/Mobile Documents/X5AZV975AG~com~soulmen~ulysses3/Docume
 #Witth a . hide ulysses original datas, otherwise empty 
 uHide = "."
 
+#No accent in file names
+no_accent_in_file = False
+
 backup_dir = os.path.expanduser(backup_dir)
 Ulysses_backup_dir = os.path.expanduser(Ulysses_backup_dir)
 Ulysses_dir = os.path.expanduser(Ulysses_dir)
