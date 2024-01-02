@@ -4,7 +4,7 @@ import datetime
 import plistlib
 import xml.etree.ElementTree as ET
 import json
-from config import backup_dir, Ulysses_dir, uHide
+from config import backup_dir, Ulysses_dir, uHide, uOriginal
 import ulysses_markdown as md
 
 current_date = datetime.datetime.now()
@@ -177,9 +177,10 @@ def process_file(filepath):
                 os.utime(md_file, timestamps)
 
             #Save source file
-            source_file = add_directory_to_path(md_file, f"{uHide}sources")
-            source_file = source_file.replace(".md","-ulysses.xml")
-            shutil.copy2(filepath,source_file)
+            if uOriginal:
+                source_file = add_directory_to_path(md_file, f"{uHide}sources")
+                source_file = source_file.replace(".md","-ulysses.xml")
+                shutil.copy2(filepath,source_file)
             
         else:
             #Empty sheet
@@ -190,19 +191,21 @@ def process_file(filepath):
         ulgroup_data = plist_loader(filepath)
         if ulgroup_data:
             saved_path = real_dir_names(filepath)
-            ulgroup_str = json.dumps(ulgroup_data)
-            ulgroup_file = build_path(f"{uHide}Info",".json")
-            with open(ulgroup_file, 'w', encoding='utf-8') as f:
-                f.write(ulgroup_str)
+            if uOriginal:
+                ulgroup_str = json.dumps(ulgroup_data)
+                ulgroup_file = build_path(f"{uHide}Info",".json")
+                with open(ulgroup_file, 'w', encoding='utf-8') as f:
+                    f.write(ulgroup_str)
 
     elif filename.endswith('.plist') and filename != 'Root.plist':
         #Metada.plist
         plist_data = plist_loader(filepath)
         if plist_data:
-            plist_str = json.dumps(plist_data)
-            plist_file = build_path(f"{uHide}plist/{order}",".json")
-            with open(plist_file, 'w', encoding='utf-8') as f:
-                f.write(plist_str)
+            if uOriginal:
+                plist_str = json.dumps(plist_data)
+                plist_file = build_path(f"{uHide}plist/{order}",".json")
+                with open(plist_file, 'w', encoding='utf-8') as f:
+                    f.write(plist_str)
 
     elif os.path.splitext(filename)[1].lower() in data_file_extensions:
         #Images, PDF and other files attached to projects
@@ -249,8 +252,6 @@ def custom_walk(directory):
     # Trier et traiter tous les fichiers
     all_files.sort(key=sort_files)
     for filepath in all_files:
-        #if '3c62fd89def541a3a00b1d01aa2374b4-ulgroup/Info.ulgroup' in filepath:
-        #    print(plist_loader(filepath))
         process_file(filepath)
 
     # Parcourir récursivement les sous-dossiers

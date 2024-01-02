@@ -12,6 +12,9 @@ Ulysses_dir = '~/Library/Mobile Documents/X5AZV975AG~com~soulmen~ulysses3/Docume
 #Witth a . hide ulysses original datas, otherwise empty 
 uHide = "."
 
+#Save or not Ulysses metadata (used for debug)
+uOriginal = False
+
 #No accent in file names
 no_accent_in_file = False
 
