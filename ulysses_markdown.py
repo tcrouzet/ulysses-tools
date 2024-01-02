@@ -46,7 +46,7 @@ def process_element(element,pattern,order,uHide):
 
                     if footnote_text_here:
                         text += f"[^{footnote_index}]"
-                        footnote_text += f"[^{footnote_index}] {footnote_text_here}\n\n"
+                        footnote_text += f"[^{footnote_index}]: {footnote_text_here}\n\n"
                         footnote_index += 1
                         element_attribute = ""
 

@@ -9,8 +9,8 @@ Ulysses_backup_dir = '~/Library/Group Containers/X5AZV975AG.com.soulmen.shared/U
 #Ulysses files non icloud
 Ulysses_dir = '~/Library/Mobile Documents/X5AZV975AG~com~soulmen~ulysses3/Documents'
 
-#Witth a . hide ulysses original datas, otherwise empty 
-uHide = "."
+#Witth a . hide ulysses original datas and medias, otherwise empty 
+uHide = ""
 
 #Save or not Ulysses metadata (used for debug)
 uOriginal = False
